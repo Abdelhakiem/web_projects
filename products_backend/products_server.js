@@ -1,7 +1,8 @@
-const express = require('express')
-const app = express()
-const port = 3000
-const products = [ {
+const express = require('express');
+var app = express();
+var port = process.env.PORT ||5000;
+
+var arr= [ {
     "id": 1,
     "title": "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
     "price": 109.95,
@@ -73,56 +74,68 @@ const products = [ {
       "count": 70
     }
   }];
-
-
-
-
-
-app.get("/", (req, res, next) => {
-  res.json(products);
+app.get('/products',(req,res,next) => {
+    next();
 });
 
-app.get("/:id", (req, res, next) => {
-  const product = products.find(p => p.id === parseInt(req.params.id));
-  if (product) {
-    res.json(product);
-  } else {
-    res.status(404).json({ message: "Product not found" });
-  }
+  app.use(express.json());
+
+ 
+  app.get('/', (req, res,next) => {
+    console.log('GET request');
+    
+    next();
+
+    });
+    app.post('/addProduct', (req, res, next) => {
+        console.log(req.body);
+        arr.push(req.body);
+        res.status(200).json(req.body);      
+        
+    });
+    
+    app.get("/:id", (req, res, next) => {
+        const id = req.params.id;
+        const index = arr.findIndex((item) => item.id == parseInt(id));
+        if (index === -1) {
+            return res.status(404).json({message: 'Product not found'});
+        }else{
+            arr[id] ={...req.body,id:id}
+            res.status(202).json({
+                message: 'Product updated successfully',
+                product: req.body,
+            });
+        }
+    });
+    app.put("/updateProduct/:id", express.json(), (req, res) => {
+        const id = req.params.id;
+        if (id< arr.length) {
+          arr[id] = req.body;
+          res.json("product updated successfully");
+        } else {
+          res.status(404).json({ message: "Product not found" });
+        }
+      });
+    app.delete("/deleteProduct/:id", (req, res, next) => {
+        
+        const id = parseInt(req.params.id);
+        const index = arr.findIndex((item) => item.id == id);
+        if (index === -1) {
+            res.status(404).json({message: 'Product not found'});
+        }else{
+            arr.splice(index, 1);
+            res.status(204).json({message: 'Product deleted successfully'});
+        }
+    })  
+    
+app.all("*",(req, res, next)=>{
+    console.log("Not Available path!");
+
+});
+    
+app.listen(port,() => {
+    console.log(`Server is running on port ${port}`);   
 });
 
-app.post("/addProduct", express.json(), (req, res) => {
-  const { product } = req.body;
-  const result = products.find((el) => el.title === product.title);
-  if (result) {
-    res.send("product is already exists");
-  } else {
-    products.push(req.body);
-    res.send("product added successfully");
-  }
-});
-
-app.put("/updateProduct/:id", express.json(), (req, res) => {
-  const id = req.params.id;
-  if (id< products.length) {
-    products[id] = req.body;
-    res.json("product updated successfully");
-  } else {
-    res.status(404).json({ message: "Product not found" });
-  }
-});
-app.delete("/deleteUser/:id", (req, res) => {
-  const id  = req.params.id;
-  if (id < users.length) {
-    users.splice(id, 1);
-    res.send("user deleted successfully");
-  } else {
-    res.send("user is not existing");
-  }
-});
-
-
-app.listen(port, () => {
-  console.log(`server is running on port ${port}`)
-})
-
+    
+    
